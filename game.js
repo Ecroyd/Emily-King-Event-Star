@@ -63,6 +63,8 @@ class Game {
         this.lastTime = 0;
         this.allowRestart = true;
         this.gameOverTime = 0;
+        this.strongGravity = 0.18; // Stronger gravity for quick descent
+        this.weakGravity = 0.08;   // Weaker gravity for hang time
         this.animate(0);
     }
     
@@ -101,7 +103,7 @@ class Game {
         if (!this.horse.jumping) {
             this.horse.jumping = true;
             this.horse.velocity = this.horse.jumpForce;
-            this.horse.gravity = 0.08;
+            this.horse.gravity = this.strongGravity; // Start with strong gravity
         }
     }
     
@@ -173,6 +175,12 @@ class Game {
     
     updateHorse(deltaTime) {
         if (this.horse.jumping) {
+            // Adjust gravity based on press
+            if (this.isPressing) {
+                this.horse.gravity = this.weakGravity; // Weaker gravity for hang time
+            } else {
+                this.horse.gravity = this.strongGravity; // Stronger gravity for quick descent
+            }
             this.horse.velocity += this.horse.gravity;
             this.horse.y += this.horse.velocity;
             
@@ -180,21 +188,11 @@ class Game {
                 this.horse.y = this.ground - this.horse.maxJumpHeight;
                 this.horse.velocity = 0;
             }
-            
             if (this.horse.y >= this.ground - 30) {
                 this.horse.y = this.ground - 30;
                 this.horse.jumping = false;
                 this.horse.velocity = 0;
             }
-        }
-        
-        if (this.isPressing && this.horse.jumping) {
-            const pressDuration = Date.now() - this.pressStartTime;
-            if (pressDuration > 200) {
-                this.horse.gravity = 0.04;
-            }
-        } else {
-            this.horse.gravity = 0.08;
         }
     }
     
