@@ -11,7 +11,7 @@ class Game {
         this.gravity = 0.6;
         this.ground = this.canvas.height - 50;
         this.scrollSpeed = 2;
-        this.maxScrollSpeed = 5;
+        this.maxScrollSpeed = 4;
         
         // Background elements
         this.clouds = [
@@ -49,7 +49,7 @@ class Game {
         this.obstacles = [];
         this.obstacleTimer = 0;
         this.obstacleInterval = 2000;
-        this.minObstacleInterval = 1200;
+        this.minObstacleInterval = 3600;
         this.maxObstacleInterval = 4000;
         
         // Input handling
@@ -117,11 +117,14 @@ class Game {
         });
         
         // Set random interval for next obstacle with occasional very close fences
-        if (Math.random() < 0.3) { // 30% chance of very close fence
-            this.obstacleInterval = Math.random() * 500 + 500; // Between 0.5 and 1 second
+        if (Math.random() < 0.3) {
+            this.obstacleInterval = Math.random() * 500 + this.minObstacleInterval; // Between min and min+0.5s
         } else {
             this.obstacleInterval = Math.random() * (this.maxObstacleInterval - this.minObstacleInterval) + this.minObstacleInterval;
         }
+        
+        // Gradually increase speed up to maxScrollSpeed
+        this.scrollSpeed = Math.min(this.scrollSpeed + 0.05, this.maxScrollSpeed);
     }
     
     updateObstacles(deltaTime) {
