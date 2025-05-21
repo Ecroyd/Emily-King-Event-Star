@@ -139,7 +139,7 @@ class Game {
             if (this.obstacles[i].x + this.obstacles[i].width < 0) {
                 this.obstacles.splice(i, 1);
                 this.score++;
-                document.getElementById('score').textContent = `Score: ${this.score}`;
+                document.getElementById('score-value').textContent = this.score;
                 continue;
             }
             
@@ -415,7 +415,7 @@ class Game {
         this.horse.velocity = 0;
         this.gameOverTime = 0;
         this.allowRestart = true;
-        document.getElementById('score').textContent = 'Score: 0';
+        document.getElementById('score-value').textContent = '0';
     }
 }
 
