@@ -49,7 +49,7 @@ class Game {
         this.obstacles = [];
         this.obstacleTimer = 0;
         this.obstacleInterval = 2000;
-        this.minObstacleInterval = 500;
+        this.minObstacleInterval = 1200;
         this.maxObstacleInterval = 4000;
         
         // Input handling
@@ -61,6 +61,8 @@ class Game {
         
         // Start game loop
         this.lastTime = 0;
+        this.allowRestart = true;
+        this.gameOverTime = 0;
         this.animate(0);
     }
     
@@ -391,6 +393,14 @@ class Game {
             this.updateObstacles(deltaTime);
             this.updateClouds();
             this.updateBackground();
+        } else {
+            // Start timer for allowing restart
+            if (!this.gameOverTime) {
+                this.gameOverTime = Date.now();
+                this.allowRestart = false;
+            } else if (Date.now() - this.gameOverTime > 3000) {
+                this.allowRestart = true;
+            }
         }
         
         this.draw();
@@ -405,6 +415,8 @@ class Game {
         this.horse.y = this.ground - 30;
         this.horse.jumping = false;
         this.horse.velocity = 0;
+        this.gameOverTime = 0;
+        this.allowRestart = true;
         document.getElementById('score').textContent = 'Score: 0';
     }
 }
@@ -414,7 +426,13 @@ const game = new Game();
 
 // Add restart functionality
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && game.gameOver) {
+    if (e.code === 'Space' && game.gameOver && game.allowRestart) {
+        game.reset();
+    }
+});
+
+document.getElementById('gameCanvas').addEventListener('touchend', (e) => {
+    if (game.gameOver && game.allowRestart) {
         game.reset();
     }
 }); 
