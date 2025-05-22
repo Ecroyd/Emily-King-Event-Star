@@ -11,7 +11,7 @@ class Game {
         this.gravity = 0.6;
         this.ground = this.canvas.height - 50;
         this.scrollSpeed = 2;
-        this.maxScrollSpeed = 4;
+        this.maxScrollSpeed = 6;
         
         // Background elements
         this.clouds = [
@@ -63,8 +63,9 @@ class Game {
         this.lastTime = 0;
         this.allowRestart = true;
         this.gameOverTime = 0;
-        this.strongGravity = 0.18; // Stronger gravity for quick descent
+        this.strongGravity = 0.25; // Stronger gravity for quick descent
         this.weakGravity = 0.08;   // Weaker gravity for hang time
+        this.obstaclesPassed = 0; // Track how many obstacles have been passed
         this.animate(0);
     }
     
@@ -108,23 +109,39 @@ class Game {
     }
     
     createObstacle() {
-        const height = Math.random() < 0.7 ? 40 : 60;
-        this.obstacles.push({
-            x: this.canvas.width,
-            y: this.ground - height,
-            width: 20,
-            height: height
-        });
-        
-        // Set random interval for next obstacle with occasional very close fences
+        // 20% chance to create a ditch instead of a fence
+        if (Math.random() < 0.2) {
+            // Ditch: wide, short, and marked as type 'ditch'
+            const width = 50 + Math.random() * 40; // 50-90px wide
+            this.obstacles.push({
+                x: this.canvas.width,
+                y: this.ground,
+                width: width,
+                height: 20,
+                type: 'ditch'
+            });
+        } else {
+            // Fence: as before, marked as type 'fence'
+            const height = Math.random() < 0.7 ? 40 : 60;
+            this.obstacles.push({
+                x: this.canvas.width,
+                y: this.ground - height,
+                width: 20,
+                height: height,
+                type: 'fence'
+            });
+        }
+        // Set random interval for next obstacle
         if (Math.random() < 0.3) {
-            this.obstacleInterval = Math.random() * 500 + this.minObstacleInterval; // Between min and min+0.5s
+            this.obstacleInterval = Math.random() * 500 + this.minObstacleInterval;
         } else {
             this.obstacleInterval = Math.random() * (this.maxObstacleInterval - this.minObstacleInterval) + this.minObstacleInterval;
         }
-        
-        // Gradually increase speed up to maxScrollSpeed
-        this.scrollSpeed = Math.min(this.scrollSpeed + 0.05, this.maxScrollSpeed);
+        // Increase speed rapidly: after 3 obstacles, reach maxScrollSpeed
+        if (this.scrollSpeed < this.maxScrollSpeed) {
+            this.scrollSpeed += (this.maxScrollSpeed - 2) / 3;
+            if (this.scrollSpeed > this.maxScrollSpeed) this.scrollSpeed = this.maxScrollSpeed;
+        }
     }
     
     updateObstacles(deltaTime) {
@@ -136,18 +153,25 @@ class Game {
         
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             if (!this.obstacles[i]) continue;
-            
             this.obstacles[i].x -= this.scrollSpeed;
-            
             if (this.obstacles[i].x + this.obstacles[i].width < 0) {
+                this.obstaclesPassed++;
                 this.obstacles.splice(i, 1);
                 this.score++;
                 document.getElementById('score-value').textContent = this.score;
                 continue;
             }
-            
+            // Check collision
             if (this.checkCollision(this.horse, this.obstacles[i])) {
                 this.gameOver = true;
+            }
+            // Ditch fail: if horse is on ground and over a ditch
+            if (this.obstacles[i].type === 'ditch') {
+                const overDitch = this.horse.x + this.horse.width > this.obstacles[i].x && this.horse.x < this.obstacles[i].x + this.obstacles[i].width;
+                const onGround = !this.horse.jumping && this.horse.y >= this.ground - 30;
+                if (overDitch && onGround) {
+                    this.gameOver = true;
+                }
             }
         }
     }
@@ -339,49 +363,41 @@ class Game {
     }
     
     draw() {
-        // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw sky
         this.ctx.fillStyle = '#87CEEB';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw clouds
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         this.clouds.forEach(cloud => {
             this.ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
         });
-        
-        // Draw manor house
         this.drawManor();
-        
         // Draw ground
         this.ctx.fillStyle = '#228B22';
         this.ctx.fillRect(0, this.ground, this.canvas.width, 50);
-        
         // Draw obstacles
-        this.ctx.fillStyle = '#8B4513';
         this.obstacles.forEach(obstacle => {
-            this.ctx.fillRect(obstacle.x, obstacle.y, 5, obstacle.height);
-            this.ctx.fillRect(obstacle.x + obstacle.width - 5, obstacle.y, 5, obstacle.height);
-            this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height/3, obstacle.width, 5);
-            this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height*2/3, obstacle.width, 5);
+            if (obstacle.type === 'fence') {
+                this.ctx.fillStyle = '#8B4513';
+                this.ctx.fillRect(obstacle.x, obstacle.y, 5, obstacle.height);
+                this.ctx.fillRect(obstacle.x + obstacle.width - 5, obstacle.y, 5, obstacle.height);
+                this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height/3, obstacle.width, 5);
+                this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height*2/3, obstacle.width, 5);
+            } else if (obstacle.type === 'ditch') {
+                // Draw ditch as a dark blue gap in the ground
+                this.ctx.fillStyle = '#1a237e';
+                this.ctx.fillRect(obstacle.x, this.ground + 10, obstacle.width, 20);
+            }
         });
-        
-        // Draw horse and rider
         this.drawHorseAndRider();
-        
-        // Draw game over message
         if (this.gameOver) {
             this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            
             this.ctx.fillStyle = 'white';
             this.ctx.font = '36px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2);
             this.ctx.font = '18px Arial';
-            this.ctx.fillText('Press Space to Restart', this.canvas.width / 2, this.canvas.height / 2 + 40);
+            this.ctx.fillText('Press Space or Tap to Restart', this.canvas.width / 2, this.canvas.height / 2 + 40);
         }
     }
     
@@ -418,6 +434,7 @@ class Game {
         this.horse.velocity = 0;
         this.gameOverTime = 0;
         this.allowRestart = true;
+        this.obstaclesPassed = 0;
         document.getElementById('score-value').textContent = '0';
     }
 }
