@@ -48,9 +48,9 @@ class Game {
         // Obstacles array
         this.obstacles = [];
         this.obstacleTimer = 0;
-        this.obstacleInterval = 2000;
-        this.minObstacleInterval = 3600;
-        this.maxObstacleInterval = 4000;
+        this.obstacleInterval = 0;
+        this.minObstacleInterval = 600;
+        this.maxObstacleInterval = 2500;
         
         // Input handling
         this.pressStartTime = 0;
@@ -63,7 +63,7 @@ class Game {
         this.lastTime = 0;
         this.allowRestart = true;
         this.gameOverTime = 0;
-        this.strongGravity = 0.25; // Stronger gravity for quick descent
+        this.strongGravity = 0.35; // Even stronger gravity for quick descent
         this.weakGravity = 0.08;   // Weaker gravity for hang time
         this.obstaclesPassed = 0; // Track how many obstacles have been passed
         this.animate(0);
@@ -131,8 +131,8 @@ class Game {
                 type: 'fence'
             });
         }
-        // Randomize interval between 1000ms and maxObstacleInterval
-        this.obstacleInterval = Math.random() * (this.maxObstacleInterval - 1000) + 1000;
+        // Randomize interval between 600ms and maxObstacleInterval
+        this.obstacleInterval = Math.random() * (this.maxObstacleInterval - this.minObstacleInterval) + this.minObstacleInterval;
         // Increase speed rapidly: after 3 obstacles, reach maxScrollSpeed
         if (this.scrollSpeed < this.maxScrollSpeed) {
             this.scrollSpeed += (this.maxScrollSpeed - 2) / 3;
