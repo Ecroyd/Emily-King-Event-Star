@@ -70,6 +70,7 @@ class Game {
         this.spectatorTimer = 0;
         this.spectatorInterval = 2000 + Math.random() * 2000;
         this.createSpectatorGroup(); // Guarantee at least one group at start
+        this.spectatorCheerTime = 0;
         this.animate(0);
     }
     
@@ -156,6 +157,10 @@ class Game {
             this.obstacles[i].x -= this.scrollSpeed;
             if (this.obstacles[i].x + this.obstacles[i].width < 0) {
                 this.obstaclesPassed++;
+                // Cheer if a fence was cleared
+                if (this.obstacles[i].type === 'fence' && !this.gameOver) {
+                    this.spectatorCheerTime = Date.now();
+                }
                 this.obstacles.splice(i, 1);
                 this.score++;
                 document.getElementById('score-value').textContent = this.score;
@@ -419,9 +424,9 @@ class Game {
     }
     
     drawSpectators() {
-        this.spectators.forEach((group, groupIdx) => {
+        const cheering = Date.now() - this.spectatorCheerTime < 600; // Cheer for 0.6s after a fence is cleared
+        this.spectators.forEach((group) => {
             group.people.forEach((person, idx) => {
-                // Calculate actual x position based on group.x
                 let px = group.x + (idx * 18);
                 // Draw body
                 this.ctx.fillStyle = '#444';
@@ -431,6 +436,24 @@ class Game {
                 this.ctx.beginPath();
                 this.ctx.arc(px + 4, person.y - 4, 6, 0, Math.PI * 2);
                 this.ctx.fill();
+                // Draw arms (cheer if cheering, otherwise down)
+                this.ctx.strokeStyle = '#444';
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                if (cheering) {
+                    // Arms up
+                    this.ctx.moveTo(px + 4, person.y + 4);
+                    this.ctx.lineTo(px - 4, person.y - 10);
+                    this.ctx.moveTo(px + 4, person.y + 4);
+                    this.ctx.lineTo(px + 12, person.y - 10);
+                } else {
+                    // Arms down
+                    this.ctx.moveTo(px + 4, person.y + 4);
+                    this.ctx.lineTo(px - 2, person.y + 16);
+                    this.ctx.moveTo(px + 4, person.y + 4);
+                    this.ctx.lineTo(px + 10, person.y + 16);
+                }
+                this.ctx.stroke();
                 // Draw dog if this person has one
                 if (person.hasDog) {
                     // Draw lead
@@ -440,8 +463,8 @@ class Game {
                     this.ctx.moveTo(px + 8, person.y + 10);
                     this.ctx.lineTo(px + 20, person.y + 18);
                     this.ctx.stroke();
-                    // Draw dog (simple brown oval body, small head, tail)
-                    this.ctx.fillStyle = '#8B4513';
+                    // Draw dog (simple black oval body, small head, tail)
+                    this.ctx.fillStyle = '#111';
                     this.ctx.beginPath();
                     this.ctx.ellipse(px + 20, person.y + 18, 8, 5, 0, 0, Math.PI * 2);
                     this.ctx.fill();
@@ -449,19 +472,12 @@ class Game {
                     this.ctx.arc(px + 27, person.y + 18, 3, 0, Math.PI * 2);
                     this.ctx.fill();
                     // Tail
-                    this.ctx.strokeStyle = '#8B4513';
+                    this.ctx.strokeStyle = '#111';
                     this.ctx.lineWidth = 2;
                     this.ctx.beginPath();
                     this.ctx.moveTo(px + 28, person.y + 18);
                     this.ctx.lineTo(px + 32, person.y + 15);
                     this.ctx.stroke();
-                }
-                // DEBUG: Draw a red dot at the first spectator's position
-                if (groupIdx === 0 && idx === 0) {
-                    this.ctx.fillStyle = 'red';
-                    this.ctx.beginPath();
-                    this.ctx.arc(px + 4, person.y - 4, 10, 0, Math.PI * 2);
-                    this.ctx.fill();
                 }
             });
         });
@@ -541,6 +557,7 @@ class Game {
         this.spectators = [];
         this.spectatorTimer = 0;
         this.spectatorInterval = 2000 + Math.random() * 2000;
+        this.spectatorCheerTime = 0;
         document.getElementById('score-value').textContent = '0';
     }
     
