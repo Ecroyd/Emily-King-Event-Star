@@ -68,7 +68,8 @@ class Game {
         this.obstaclesPassed = 0; // Track how many obstacles have been passed
         this.spectators = [];
         this.spectatorTimer = 0;
-        this.spectatorInterval = 2000 + Math.random() * 2000; // 2-4 seconds between groups
+        this.spectatorInterval = 2000 + Math.random() * 2000;
+        this.createSpectatorGroup(); // Guarantee at least one group at start
         this.animate(0);
     }
     
@@ -195,7 +196,7 @@ class Game {
         } else {
             if (Math.random() < 0.001) {
                 this.backgroundElements.manor.active = true;
-                this.backgroundElements.manor.x = this.canvas.width;
+                this.backgroundElements.manor.x = this.canvas.width + this.backgroundElements.manor.width;
             }
         }
         // Update spectators
@@ -203,10 +204,10 @@ class Game {
         if (this.spectatorTimer > this.spectatorInterval) {
             this.createSpectatorGroup();
             this.spectatorTimer = 0;
-            this.spectatorInterval = 2000 + Math.random() * 2000; // 2-4 seconds between groups
+            this.spectatorInterval = 2000 + Math.random() * 2000;
         }
         for (let i = this.spectators.length - 1; i >= 0; i--) {
-            this.spectators[i].x -= this.scrollSpeed;
+            this.spectators[i].x -= this.scrollSpeed * 0.8;
             if (this.spectators[i].x + this.spectators[i].groupWidth < 0) {
                 this.spectators.splice(i, 1);
             }
@@ -418,15 +419,17 @@ class Game {
     }
     
     drawSpectators() {
-        this.spectators.forEach(group => {
+        this.spectators.forEach((group, groupIdx) => {
             group.people.forEach((person, idx) => {
+                // Calculate actual x position based on group.x
+                let px = group.x + (idx * 18);
                 // Draw body
                 this.ctx.fillStyle = '#444';
-                this.ctx.fillRect(person.x, person.y, 8, 18);
+                this.ctx.fillRect(px, person.y, 8, 18);
                 // Draw head
                 this.ctx.fillStyle = person.color;
                 this.ctx.beginPath();
-                this.ctx.arc(person.x + 4, person.y - 4, 6, 0, Math.PI * 2);
+                this.ctx.arc(px + 4, person.y - 4, 6, 0, Math.PI * 2);
                 this.ctx.fill();
                 // Draw dog if this person has one
                 if (person.hasDog) {
@@ -434,24 +437,31 @@ class Game {
                     this.ctx.strokeStyle = '#222';
                     this.ctx.lineWidth = 2;
                     this.ctx.beginPath();
-                    this.ctx.moveTo(person.x + 8, person.y + 10);
-                    this.ctx.lineTo(person.x + 20, person.y + 18);
+                    this.ctx.moveTo(px + 8, person.y + 10);
+                    this.ctx.lineTo(px + 20, person.y + 18);
                     this.ctx.stroke();
                     // Draw dog (simple brown oval body, small head, tail)
                     this.ctx.fillStyle = '#8B4513';
                     this.ctx.beginPath();
-                    this.ctx.ellipse(person.x + 20, person.y + 18, 8, 5, 0, 0, Math.PI * 2);
+                    this.ctx.ellipse(px + 20, person.y + 18, 8, 5, 0, 0, Math.PI * 2);
                     this.ctx.fill();
                     this.ctx.beginPath();
-                    this.ctx.arc(person.x + 27, person.y + 18, 3, 0, Math.PI * 2);
+                    this.ctx.arc(px + 27, person.y + 18, 3, 0, Math.PI * 2);
                     this.ctx.fill();
                     // Tail
                     this.ctx.strokeStyle = '#8B4513';
                     this.ctx.lineWidth = 2;
                     this.ctx.beginPath();
-                    this.ctx.moveTo(person.x + 28, person.y + 18);
-                    this.ctx.lineTo(person.x + 32, person.y + 15);
+                    this.ctx.moveTo(px + 28, person.y + 18);
+                    this.ctx.lineTo(px + 32, person.y + 15);
                     this.ctx.stroke();
+                }
+                // DEBUG: Draw a red dot at the first spectator's position
+                if (groupIdx === 0 && idx === 0) {
+                    this.ctx.fillStyle = 'red';
+                    this.ctx.beginPath();
+                    this.ctx.arc(px + 4, person.y - 4, 10, 0, Math.PI * 2);
+                    this.ctx.fill();
                 }
             });
         });
@@ -539,7 +549,7 @@ class Game {
         const num = 2 + Math.floor(Math.random() * 4);
         const group = [];
         let groupWidth = 0;
-        let baseX = this.canvas.width + Math.random() * 100;
+        let baseX = this.canvas.width + 10;
         let y = this.ground - 18;
         let dogIndex = Math.floor(Math.random() * num); // One spectator will have a dog
         for (let i = 0; i < num; i++) {
