@@ -131,12 +131,8 @@ class Game {
                 type: 'fence'
             });
         }
-        // Set random interval for next obstacle
-        if (Math.random() < 0.3) {
-            this.obstacleInterval = Math.random() * 500 + this.minObstacleInterval;
-        } else {
-            this.obstacleInterval = Math.random() * (this.maxObstacleInterval - this.minObstacleInterval) + this.minObstacleInterval;
-        }
+        // Randomize interval between 1000ms and maxObstacleInterval
+        this.obstacleInterval = Math.random() * (this.maxObstacleInterval - 1000) + 1000;
         // Increase speed rapidly: after 3 obstacles, reach maxScrollSpeed
         if (this.scrollSpeed < this.maxScrollSpeed) {
             this.scrollSpeed += (this.maxScrollSpeed - 2) / 3;
@@ -251,15 +247,15 @@ class Game {
         this.ctx.fillStyle = '#D2B48C';
         this.ctx.fillRect(m.x, m.y, m.width, m.height);
         
-        // Draw main roof
-        this.ctx.fillStyle = '#8B4513';
+        // Draw main roof (darker brown)
+        this.ctx.fillStyle = '#5C3310';
         this.ctx.beginPath();
         this.ctx.moveTo(m.x - 10, m.y);
         this.ctx.lineTo(m.x + m.width/2, m.y - 40);
         this.ctx.lineTo(m.x + m.width + 10, m.y);
         this.ctx.fill();
         
-        // Draw wing roofs
+        // Draw wing roofs (darker brown)
         this.ctx.beginPath();
         this.ctx.moveTo(m.x - 70, m.y + 50);
         this.ctx.lineTo(m.x - 30, m.y + 20);
@@ -290,8 +286,8 @@ class Game {
         this.ctx.fillRect(m.x + m.width + 20, m.y + 70, 20, 30);
         this.ctx.fillRect(m.x + m.width + 20, m.y + 110, 20, 30);
         
-        // Draw door
-        this.ctx.fillStyle = '#8B4513';
+        // Draw door (darker brown)
+        this.ctx.fillStyle = '#4B2E05';
         this.ctx.fillRect(m.x + 80, m.y + 100, 40, 50);
     }
     
@@ -354,12 +350,14 @@ class Game {
         // Draw rider in more purple color
         this.ctx.fillStyle = '#9370DB';
         this.ctx.fillRect(this.horse.x + 15, this.horse.y - 25, 20, 25);
-        
-        // Draw rider's head
+        // Draw rider's head (yellow)
         this.ctx.fillStyle = '#FFD700';
         this.ctx.beginPath();
         this.ctx.arc(this.horse.x + 25, this.horse.y - 35, 6, 0, Math.PI * 2);
         this.ctx.fill();
+        // Draw black helmet as a rectangle covering the top half of the head
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(this.horse.x + 19, this.horse.y - 41, 12, 6);
     }
     
     draw() {
@@ -383,9 +381,9 @@ class Game {
                 this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height/3, obstacle.width, 5);
                 this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height*2/3, obstacle.width, 5);
             } else if (obstacle.type === 'ditch') {
-                // Draw ditch as a dark blue gap in the ground
+                // Draw ditch as a dark blue gap inline with the top of the ground
                 this.ctx.fillStyle = '#1a237e';
-                this.ctx.fillRect(obstacle.x, this.ground + 10, obstacle.width, 20);
+                this.ctx.fillRect(obstacle.x, this.ground, obstacle.width, 20);
             }
         });
         this.drawHorseAndRider();
