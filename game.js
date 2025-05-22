@@ -66,6 +66,9 @@ class Game {
         this.strongGravity = 0.35; // Even stronger gravity for quick descent
         this.weakGravity = 0.08;   // Weaker gravity for hang time
         this.obstaclesPassed = 0; // Track how many obstacles have been passed
+        this.spectators = [];
+        this.spectatorTimer = 0;
+        this.spectatorInterval = 6000 + Math.random() * 6000; // 6-12 seconds between groups
         this.animate(0);
     }
     
@@ -183,6 +186,7 @@ class Game {
     }
     
     updateBackground() {
+        // Update manor house
         if (this.backgroundElements.manor.active) {
             this.backgroundElements.manor.x -= this.backgroundElements.manor.speed;
             if (this.backgroundElements.manor.x + this.backgroundElements.manor.width < 0) {
@@ -192,6 +196,19 @@ class Game {
             if (Math.random() < 0.001) {
                 this.backgroundElements.manor.active = true;
                 this.backgroundElements.manor.x = this.canvas.width;
+            }
+        }
+        // Update spectators
+        this.spectatorTimer += this.scrollSpeed;
+        if (this.spectatorTimer > this.spectatorInterval) {
+            this.createSpectatorGroup();
+            this.spectatorTimer = 0;
+            this.spectatorInterval = 6000 + Math.random() * 6000;
+        }
+        for (let i = this.spectators.length - 1; i >= 0; i--) {
+            this.spectators[i].x -= this.scrollSpeed;
+            if (this.spectators[i].x + this.spectators[i].groupWidth < 0) {
+                this.spectators.splice(i, 1);
             }
         }
     }
@@ -400,6 +417,46 @@ class Game {
         this.ctx.fillRect(this.horse.x + 19, this.horse.y - 41, 12, 6);
     }
     
+    drawSpectators() {
+        this.spectators.forEach(group => {
+            group.people.forEach((person, idx) => {
+                // Draw body
+                this.ctx.fillStyle = '#444';
+                this.ctx.fillRect(person.x, person.y, 8, 18);
+                // Draw head
+                this.ctx.fillStyle = person.color;
+                this.ctx.beginPath();
+                this.ctx.arc(person.x + 4, person.y - 4, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+                // Draw dog if this person has one
+                if (person.hasDog) {
+                    // Draw lead
+                    this.ctx.strokeStyle = '#222';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(person.x + 8, person.y + 10);
+                    this.ctx.lineTo(person.x + 20, person.y + 18);
+                    this.ctx.stroke();
+                    // Draw dog (simple brown oval body, small head, tail)
+                    this.ctx.fillStyle = '#8B4513';
+                    this.ctx.beginPath();
+                    this.ctx.ellipse(person.x + 20, person.y + 18, 8, 5, 0, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.beginPath();
+                    this.ctx.arc(person.x + 27, person.y + 18, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    // Tail
+                    this.ctx.strokeStyle = '#8B4513';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(person.x + 28, person.y + 18);
+                    this.ctx.lineTo(person.x + 32, person.y + 15);
+                    this.ctx.stroke();
+                }
+            });
+        });
+    }
+    
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = '#87CEEB';
@@ -409,10 +466,9 @@ class Game {
             this.ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
         });
         this.drawManor();
-        // Draw ground
+        this.drawSpectators(); // Draw spectators in front of manor, behind obstacles/horse
         this.ctx.fillStyle = '#228B22';
         this.ctx.fillRect(0, this.ground, this.canvas.width, 50);
-        // Draw obstacles
         this.obstacles.forEach(obstacle => {
             if (obstacle.type === 'fence') {
                 this.ctx.fillStyle = '#8B4513';
@@ -421,7 +477,6 @@ class Game {
                 this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height/3, obstacle.width, 5);
                 this.ctx.fillRect(obstacle.x, obstacle.y + obstacle.height*2/3, obstacle.width, 5);
             } else if (obstacle.type === 'ditch') {
-                // Draw ditch as a dark blue gap inline with the top of the ground
                 this.ctx.fillStyle = '#1a237e';
                 this.ctx.fillRect(obstacle.x, this.ground, obstacle.width, 20);
             }
@@ -473,7 +528,36 @@ class Game {
         this.gameOverTime = 0;
         this.allowRestart = true;
         this.obstaclesPassed = 0;
+        this.spectators = [];
+        this.spectatorTimer = 0;
+        this.spectatorInterval = 6000 + Math.random() * 6000;
         document.getElementById('score-value').textContent = '0';
+    }
+    
+    createSpectatorGroup() {
+        // 2-5 spectators per group
+        const num = 2 + Math.floor(Math.random() * 4);
+        const group = [];
+        let groupWidth = 0;
+        let baseX = this.canvas.width + Math.random() * 100;
+        let y = this.ground + 10;
+        let dogIndex = Math.floor(Math.random() * num); // One spectator will have a dog
+        for (let i = 0; i < num; i++) {
+            let color = ['#f5c16c', '#e0ac69', '#c68642', '#8d5524', '#fff', '#222'][Math.floor(Math.random()*6)];
+            group.push({
+                x: baseX + i * 18,
+                y: y,
+                color: color,
+                hasDog: i === dogIndex
+            });
+            groupWidth = (i+1) * 18;
+        }
+        this.spectators.push({
+            x: baseX,
+            y: y,
+            people: group,
+            groupWidth: groupWidth
+        });
     }
 }
 
