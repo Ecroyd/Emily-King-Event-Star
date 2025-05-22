@@ -68,7 +68,7 @@ class Game {
         this.obstaclesPassed = 0; // Track how many obstacles have been passed
         this.spectators = [];
         this.spectatorTimer = 0;
-        this.spectatorInterval = 6000 + Math.random() * 6000; // 6-12 seconds between groups
+        this.spectatorInterval = 2000 + Math.random() * 2000; // 2-4 seconds between groups
         this.animate(0);
     }
     
@@ -87,20 +87,20 @@ class Game {
             }
         });
         
-        // Touch support
-        this.canvas.addEventListener('touchstart', (e) => {
+        // Touch support on the whole document
+        document.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (!this.isPressing) {
                 this.isPressing = true;
                 this.pressStartTime = Date.now();
                 this.jump();
             }
-        });
+        }, { passive: false });
         
-        this.canvas.addEventListener('touchend', (e) => {
+        document.addEventListener('touchend', (e) => {
             e.preventDefault();
             this.isPressing = false;
-        });
+        }, { passive: false });
     }
     
     jump() {
@@ -203,7 +203,7 @@ class Game {
         if (this.spectatorTimer > this.spectatorInterval) {
             this.createSpectatorGroup();
             this.spectatorTimer = 0;
-            this.spectatorInterval = 6000 + Math.random() * 6000;
+            this.spectatorInterval = 2000 + Math.random() * 2000; // 2-4 seconds between groups
         }
         for (let i = this.spectators.length - 1; i >= 0; i--) {
             this.spectators[i].x -= this.scrollSpeed;
@@ -508,7 +508,7 @@ class Game {
             if (!this.gameOverTime) {
                 this.gameOverTime = Date.now();
                 this.allowRestart = false;
-            } else if (Date.now() - this.gameOverTime > 3000) {
+            } else if (Date.now() - this.gameOverTime > 1000) { // 1 second delay
                 this.allowRestart = true;
             }
         }
@@ -530,7 +530,7 @@ class Game {
         this.obstaclesPassed = 0;
         this.spectators = [];
         this.spectatorTimer = 0;
-        this.spectatorInterval = 6000 + Math.random() * 6000;
+        this.spectatorInterval = 2000 + Math.random() * 2000;
         document.getElementById('score-value').textContent = '0';
     }
     
