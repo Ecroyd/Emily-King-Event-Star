@@ -540,7 +540,7 @@ class Game {
         const group = [];
         let groupWidth = 0;
         let baseX = this.canvas.width + Math.random() * 100;
-        let y = this.ground + 10;
+        let y = this.ground - 18;
         let dogIndex = Math.floor(Math.random() * num); // One spectator will have a dog
         for (let i = 0; i < num; i++) {
             let color = ['#f5c16c', '#e0ac69', '#c68642', '#8d5524', '#fff', '#222'][Math.floor(Math.random()*6)];
