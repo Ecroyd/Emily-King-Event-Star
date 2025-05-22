@@ -296,7 +296,29 @@ class Game {
         this.ctx.fillStyle = '#8B4513';
         this.ctx.fillRect(this.horse.x, this.horse.y, this.horse.width, this.horse.height);
         
-        // Draw horse legs
+        // Draw horse tail
+        this.ctx.save();
+        this.ctx.strokeStyle = '#8B4513';
+        this.ctx.lineWidth = 6;
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        let tailBaseX = this.horse.x - 5;
+        let tailBaseY = this.horse.y + this.horse.height - 5;
+        if (this.horse.jumping) {
+            // Tail up when jumping
+            this.ctx.moveTo(tailBaseX, tailBaseY);
+            this.ctx.lineTo(tailBaseX - 15, tailBaseY - 20);
+        } else {
+            // Tail down when running/standing
+            this.ctx.moveTo(tailBaseX, tailBaseY);
+            this.ctx.lineTo(tailBaseX - 10, tailBaseY + 20);
+        }
+        this.ctx.stroke();
+        this.ctx.restore();
+        
+        // Animate legs
+        const now = Date.now();
+        let runAnim = Math.sin(now / 120) * 0.5; // Oscillate between -0.5 and 0.5 radians
         this.ctx.fillStyle = '#8B4513';
         if (this.horse.jumping) {
             // Folded legs during jump
@@ -326,13 +348,31 @@ class Game {
             this.ctx.fillRect(0, 0, 6, 15);
             this.ctx.restore();
         } else {
-            // Normal standing legs
-            // Front legs
-            this.ctx.fillRect(this.horse.x + 10, this.horse.y + this.horse.height, 6, 20);
-            this.ctx.fillRect(this.horse.x + 25, this.horse.y + this.horse.height, 6, 20);
-            // Back legs
-            this.ctx.fillRect(this.horse.x + 35, this.horse.y + this.horse.height, 6, 20);
-            this.ctx.fillRect(this.horse.x + 50, this.horse.y + this.horse.height, 6, 20);
+            // Animated running legs
+            // Front left leg
+            this.ctx.save();
+            this.ctx.translate(this.horse.x + 10, this.horse.y + this.horse.height);
+            this.ctx.rotate(0.2 + runAnim);
+            this.ctx.fillRect(0, 0, 6, 20);
+            this.ctx.restore();
+            // Front right leg
+            this.ctx.save();
+            this.ctx.translate(this.horse.x + 25, this.horse.y + this.horse.height);
+            this.ctx.rotate(-0.2 - runAnim);
+            this.ctx.fillRect(0, 0, 6, 20);
+            this.ctx.restore();
+            // Back left leg
+            this.ctx.save();
+            this.ctx.translate(this.horse.x + 35, this.horse.y + this.horse.height);
+            this.ctx.rotate(-0.2 + runAnim);
+            this.ctx.fillRect(0, 0, 6, 20);
+            this.ctx.restore();
+            // Back right leg
+            this.ctx.save();
+            this.ctx.translate(this.horse.x + 50, this.horse.y + this.horse.height);
+            this.ctx.rotate(0.2 - runAnim);
+            this.ctx.fillRect(0, 0, 6, 20);
+            this.ctx.restore();
         }
         
         // Draw horse head
