@@ -466,9 +466,9 @@ class Game {
             this.ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
         });
         this.drawManor();
-        this.drawSpectators(); // Draw spectators in front of manor, behind obstacles/horse
         this.ctx.fillStyle = '#228B22';
         this.ctx.fillRect(0, this.ground, this.canvas.width, 50);
+        this.drawSpectators(); // Draw spectators on top of grass, in front of manor
         this.obstacles.forEach(obstacle => {
             if (obstacle.type === 'fence') {
                 this.ctx.fillStyle = '#8B4513';
