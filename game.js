@@ -71,7 +71,54 @@ class Game {
         this.spectatorInterval = 2000 + Math.random() * 2000;
         this.createSpectatorGroup(); // Guarantee at least one group at start
         this.spectatorCheerTime = 0;
+        this.highScores = [];
+        this.waitingForInitials = false;
+        this.loadHighScores();
         this.animate(0);
+    }
+
+    async loadHighScores() {
+        try {
+            const { data, error } = await window._supabase
+                .from('high_scores')
+                .select('name, score')
+                .order('score', { ascending: false })
+                .limit(10);
+            if (!error && data) {
+                this.highScores = data.map(r => ({ initials: r.name, score: r.score }));
+            }
+        } catch (e) {}
+    }
+
+    async isHighScore(score) {
+        if (score === 0) return false;
+        if (this.highScores.length < 10) return true;
+        return score > this.highScores[this.highScores.length - 1].score;
+    }
+
+    async addHighScore(name, score) {
+        try {
+            await window._supabase
+                .from('high_scores')
+                .insert({ name: name.toUpperCase().substring(0, 5), score });
+        } catch (e) {}
+        await this.loadHighScores();
+    }
+
+    showInitialsOverlay() {
+        this.waitingForInitials = true;
+        const overlay = document.getElementById('initials-overlay');
+        const label = document.getElementById('initials-score-label');
+        const input = document.getElementById('initials-input');
+        label.textContent = `Score: ${this.score}`;
+        input.value = '';
+        overlay.style.display = 'block';
+        setTimeout(() => input.focus(), 50);
+    }
+
+    hideInitialsOverlay() {
+        document.getElementById('initials-overlay').style.display = 'none';
+        this.waitingForInitials = false;
     }
     
     setupEventListeners() {
@@ -509,14 +556,47 @@ class Game {
         });
         this.drawHorseAndRider();
         if (this.gameOver) {
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = '36px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2);
-            this.ctx.font = '18px Arial';
-            this.ctx.fillText('Press Space or Tap to Restart', this.canvas.width / 2, this.canvas.height / 2 + 40);
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 30px Arial';
+            this.ctx.fillText('Game Over!', this.canvas.width / 2, 40);
+
+            // High score table
+            if (this.highScores.length > 0) {
+                const cx = this.canvas.width / 2;
+                let ty = 62;
+                this.ctx.font = 'bold 13px Arial';
+                this.ctx.fillStyle = '#ffd700';
+                this.ctx.fillText('HIGH SCORES', cx, ty);
+                ty += 5;
+                this.ctx.strokeStyle = '#ffd700';
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                this.ctx.moveTo(cx - 95, ty);
+                this.ctx.lineTo(cx + 95, ty);
+                this.ctx.stroke();
+                ty += 16;
+                this.highScores.forEach((entry, i) => {
+                    this.ctx.font = i === 0 ? 'bold 13px Arial' : '12px Arial';
+                    this.ctx.fillStyle = i === 0 ? '#ffd700' : 'white';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillText(`${i + 1}.`, cx - 65, ty);
+                    this.ctx.textAlign = 'left';
+                    this.ctx.fillText(entry.initials.substring(0, 5), cx - 58, ty);
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillText(String(entry.score), cx + 90, ty);
+                    ty += 19;
+                });
+            }
+
+            if (!this.waitingForInitials && this.allowRestart) {
+                this.ctx.textAlign = 'center';
+                this.ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                this.ctx.font = '14px Arial';
+                this.ctx.fillText('Press Space or Tap to Restart', this.canvas.width / 2, this.canvas.height - 14);
+            }
         }
     }
     
@@ -534,7 +614,10 @@ class Game {
             if (!this.gameOverTime) {
                 this.gameOverTime = Date.now();
                 this.allowRestart = false;
-            } else if (Date.now() - this.gameOverTime > 1000) { // 1 second delay
+                this.isHighScore(this.score).then(qualifies => {
+                    if (qualifies) this.showInitialsOverlay();
+                });
+            } else if (!this.waitingForInitials && Date.now() - this.gameOverTime > 1000) {
                 this.allowRestart = true;
             }
         }
@@ -544,6 +627,8 @@ class Game {
     }
     
     reset() {
+        this.hideInitialsOverlay();
+        this.isJustSaved = false;
         this.score = 0;
         this.gameOver = false;
         this.obstacles = [];
@@ -593,13 +678,32 @@ const game = new Game();
 
 // Add restart functionality
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && game.gameOver && game.allowRestart) {
+    if (e.code === 'Space' && game.gameOver && game.allowRestart && !game.waitingForInitials) {
         game.reset();
     }
 });
 
 document.getElementById('gameCanvas').addEventListener('touchend', (e) => {
-    if (game.gameOver && game.allowRestart) {
+    if (game.gameOver && game.allowRestart && !game.waitingForInitials) {
         game.reset();
     }
+});
+
+// Initials submission
+async function submitInitials() {
+    const input = document.getElementById('initials-input');
+    const val = input.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5) || 'ANON';
+    game.hideInitialsOverlay();
+    game.allowRestart = true;
+    await game.addHighScore(val, game.score);
+}
+
+document.getElementById('initials-submit').addEventListener('click', submitInitials);
+
+document.getElementById('initials-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitInitials();
+});
+
+document.getElementById('initials-input').addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 5);
 }); 
