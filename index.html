@@ -97,6 +97,18 @@
             font-weight: bold;
         }
         #initials-submit:hover { background: #ffe855; }
+        #initials-skip {
+            display: block;
+            margin: 8px auto 0;
+            padding: 6px 28px;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            background: transparent;
+            color: rgba(255,255,255,0.5);
+            border: none;
+            cursor: pointer;
+        }
+        #initials-skip:hover { color: white; }
     </style>
 </head>
 <body>
@@ -106,6 +118,7 @@
         <p id="initials-score-label"></p>
         <input id="initials-input" type="text" maxlength="5" placeholder="ABCDE" autocomplete="off" autocorrect="off" spellcheck="false" />
         <button id="initials-submit">Save</button>
+        <button id="initials-skip">Skip</button>
     </div>
     <canvas id="gameCanvas"></canvas>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

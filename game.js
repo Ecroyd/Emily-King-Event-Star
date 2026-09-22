@@ -700,6 +700,11 @@ async function submitInitials() {
 
 document.getElementById('initials-submit').addEventListener('click', submitInitials);
 
+document.getElementById('initials-skip').addEventListener('click', () => {
+    game.hideInitialsOverlay();
+    game.allowRestart = true;
+});
+
 document.getElementById('initials-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submitInitials();
 });
